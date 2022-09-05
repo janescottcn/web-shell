@@ -4,7 +4,7 @@
     <springProperty scope="context" name="LOGSTASH_ADDRESS" source="logstash.address"/>
     <springProperty scope="context" name="APPLICATION_NAME" source="spring.application.name"/>
     <!--日志在工程中的输出位置-->
-    <property name="LOG_FILE" value="/opt/web-shell/logging"/>
+    <property name="LOG_FILE" value="./logs/web-shell/logging"/>
     <!-- 彩色日志依赖的渲染类 -->
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
     <conversionRule conversionWord="wex"

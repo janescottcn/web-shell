@@ -26,7 +26,7 @@ spring:
   devtools:
     restart:
       # 热部署重启开关，不重启实现快速热部署
-      enabled: false
+      enabled: true
   web:
     resources:
       # 静态资源的配置位置，可以写成一个数组配置多个目录
@@ -57,5 +57,16 @@ logging:
     web: INFO
     com.github.zmzhoustar: INFO
     org.springframework: INFO
-logstash:
-  address: 192.168.163.132:4567
+# 暂时没有使用
+#logstash:
+#  address: 192.168.163.132:4567
+# 服务器地址
+webshell:
+  server-list:
+#    hosts: "10.250.151.155,10.250.151.156,10.250.151.157,10.250.151.158,10.250.151.159,10.250.151.160"
+    hosts: "janescott.cn"
+#    username: "haieradmin"
+#    password: "RMINjG1i76XX"
+    username: "root"
+    key: "ws9ybUMn4F81t5oPKqJrqLKxERaYAS12"
+    password: "Zp@940701"

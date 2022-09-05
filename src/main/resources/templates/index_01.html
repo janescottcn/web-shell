@@ -6,11 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>web shell 登录Linux远程主机</title>
   <link rel="shortcut icon" th:href="@{/static/img/favicon.ico}"/>
-  <link rel="stylesheet" th:href="@{/static/css/xterm.css}"/>
+  <!--  <link rel="stylesheet" th:href="@{/static/css/xterm.css}"/>-->
   <link rel="stylesheet" th:href="@{/static/css/webShell.css}"/>
-  <script type="text/javascript" th:src="@{/static/js/xterm.js}"></script>
-  <!--  <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js"></script>-->
-  <!--  <script src="https://unpkg.com/xterm-addon-webgl@0.12.0-beta.15/lib/xterm-addon-webgl.js"></script>-->
+  <!--  <script type="text/javascript" th:src="@{/static/js/xterm.js}"></script>-->
+
+  <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js"></script>
+  <script src="https://unpkg.com/xterm-addon-webgl@0.12.0-beta.15/lib/xterm-addon-webgl.js"></script>
+
   <script type="text/javascript" th:src="@{/static/js/jquery-3.5.1.min.js}"></script>
   <script type="text/javascript" th:src="@{/static/js/web-socket.js}"></script>
   <script type="text/javascript" th:src="@{/static/js/crypto-js.min.js}"></script>
@@ -45,40 +47,33 @@
     let num1 = Math.round(Math.random() * 360);
     let num2 = Math.round(Math.random() * 360);
     $('body').css({background: 'linear-gradient(to left bottom, hsl(' + num1 + ', 100%, 85%) 0%,hsl(' + num2 + ', 100%, 85%) 100%)'})
-  })
+  });
+
   // 获取容器宽高/字号大小，定义行数和列数
   let rows = document.querySelector(".indexContainer").offsetHeight / 16 - 5;
   let cols = document.querySelector(".indexContainer").offsetWidth / 9;
-  let term = new Terminal({
-    rendererType: "canvas", //渲染类型
-    pid: 1,
-    name: 'terminal',
-    // rows: parseInt(rows), //行数
-    // cols: parseInt(cols),
-    convertEol: true, //启用时，光标将设置为下一行的开头
-    // scrollback: 500,//终端中的回滚量
-    disableStdin: false, //是否应禁用输入。
-    cursorStyle: 'underline', //光标样式
-    cursorBlink: true, //光标闪烁
-    tabStopWidth: 4, //制表宽度
-    screenKeys: true, //Xterm下的快捷键
-    theme: {
-      foreground: '#58a6ff', //字体,LightGreen,Orange,SlateBlue,Magenta Purple Red Violet White Yellow
-      background: '#2B2B2B', //背景色
-      // foreground: "#7e9192", //字体
-      // background: "#002833", //背景色
-      cursor: "Orange", //设置光标
-      lineHeight: 16
-    }
-  });
 
-  term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
-  // 换行并输入起始符“$”
-  term.prompt = () => {
-    term.write("\r\n$ ");
-  };
+  // var isWebglEnabled = false;
+  // try {
+  //   const webgl = new window.WebglAddon.WebglAddon();
+  //   term.loadAddon(webgl);
+  //   isWebglEnabled = true;
+  // } catch (e) {
+  //   console.warn('WebGL addon threw an exception during load', e);
+  // }
+
+  // Cancel wheel events from scrolling the page if the terminal has scrollback
+  // document.querySelector('.xterm').addEventListener('wheel', e => {
+  //   if (term.buffer.active.baseY > 0) {
+  //     e.preventDefault();
+  //   }
+  // });
+
 
   let client = new WebSocketClient();
+
+  let selection;
+  let term;
 
   /**
    * 执行连接操作
@@ -86,7 +81,40 @@
    * @param {String} divId 显示控件id
    */
   function connect(params, divId) {
-    term.open(document.getElementById(divId), true);
+    term = new window.Terminal({
+      fontFamily: '"Cascadia Code", Menlo, monospace',
+      // theme: otherTheme,
+      cursorBlink: true,
+      convertEol: true, //启用时，光标将设置为下一行的开头
+      // scrollback: 500,//终端中的回滚量
+      disableStdin: false, //是否应禁用输入。
+      cursorStyle: 'underline', //光标样式
+      tabStopWidth: 8, //制表宽度
+      screenKeys: true, //Xterm下的快捷键
+      // 获取容器宽高/字号大小，定义行数和列数
+      // rows: document.querySelector(".indexContainer").offsetHeight / 16 - 5,
+      // cols: document.querySelector(".indexContainer").offsetWidth / 9
+    });
+
+    //选中复制
+    term.onSelectionChange(function () {
+      if (term.hasSelection()) {
+        selection = term.getSelection();
+      }
+    });
+
+    term.attachCustomKeyEventHandler(function (ev) {
+      //粘贴 ctrl+v
+      if (ev.keyCode === 86 && ev.ctrlKey) {
+        client.sendClientData("\x00" + selection);
+        selection = "";
+      }
+    });
+
+    term.open(document.querySelector('.indexContainer'));
+    // term.open(document.getElementById(divId), true);
+    term.write('\r\n$ ');
+
     //在页面上显示连接中...
     term.write('\r\nConnecting...');
     //执行连接操作
@@ -148,21 +176,6 @@
     loginParams.operate = 'sftp'
     window.open(window.location.href.replace('?#', 'sftp?params=' + encodeURIComponent(JSON.stringify(loginParams))))
   }
-
-  let selection;
-  //选中复制
-  term.onSelectionChange(function () {
-    if (term.hasSelection()) {
-      selection = term.getSelection();
-    }
-  });
-  term.attachCustomKeyEventHandler(function (ev) {
-    //粘贴 ctrl+v
-    if (ev.keyCode === 86 && ev.ctrlKey) {
-      client.sendClientData("\x00" + selection);
-      selection = "";
-    }
-  });
 
   // 内容全屏显示-窗口大小发生改变时
   function resizeScreen(size) {
